@@ -1,0 +1,106 @@
+Estatistica Descritiva
+
+Breve análise dos estados brasileiros com melhor produtividade na área de atendimento Individual. Os dados foram retirados de https://sisab.saude.gov.br/index.xhtml Utilizando as opções para que pudessemos ter todos os atendimentos individuias por estado, tomei também a liberdade de criar uma nova variável com os atendimentos brutos divido pela população de cada estado, os dados populacionais foram retirados do site do IBGE e podem ser encontrados em https://www.ibge.gov.br/estatisticas/sociais/populacao/22827-censo-demografico-2022.html Esta análise contém alguns gráficos e breve descrição dos mesmos.
+
+#Gráfico de barras para váriavel Atendimento Individual
+df %>%
+  mutate(Estado = fct_reorder(Estado, AtendimentoIndividual)) %>%  
+ggplot(aes(y = Estado, x = AtendimentoIndividual)) +
+  geom_bar(stat = "identity")
+
+#Gráfico de barras para váriavel AtendimentoHab
+df %>%
+  mutate(Estado = fct_reorder(Estado, AtendimentoHab)) %>%
+ggplot(aes(y = Estado, x = AtendimentoHab)) +
+  geom_bar(stat = "identity")
+
+#Criando data.frame com a forma do mapa do Brasil
+states <- read_state(
+  year=2020, 
+  showProgress = FALSE
+  )
+
+
+#Retirando os eixos e textos do mapa
+no_axis <- theme(axis.title=element_blank(),
+                 axis.text=element_blank(),
+                 axis.ticks=element_blank())
+#Indexando minhas variáveis ao banco com o mapa
+states$name_state <- tolower(rm_accent(states$name_state))
+df$Estado <- tolower(df$Estado)
+states <- dplyr::left_join(states, df, by = c("name_state" = "Estado"))
+
+#Criando mapa para váriavel AtendimentoIndividual
+ggplot() +
+  geom_sf(data=states, aes(fill=AtendimentoIndividual), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos Individuais") +
+    theme_minimal()
+
+
+#Criando mapa para váriavel AtendimentoHab
+ggplot() +
+  geom_sf(data=states, aes(fill=AtendimentoHab), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos para cada 100 mil habitantes")+
+    theme_minimal()
+
+
+#Dividindo o banco de dados com o mapa, por região, para análise separada posterior 
+nortestates = states[states$name_region== "Norte",]
+nordestestates = states[states$name_region== "Nordeste",]
+sudestestates = states[states$name_region== "Sudeste",]
+sulstates = states[states$name_region== "Sul",]
+centrostates = states[states$name_region== "Centro Oeste",]
+
+#Criando uma nova coluna para fazer um apanhado por região no mapa com as médias da variável atendimento por habitantes
+a = c(rep(mean(nortestates$AtendimentoHab),7),rep(mean(nordestestates$AtendimentoHab),9),rep(mean(sudestestates$AtendimentoHab),4),rep(mean(sulstates$AtendimentoHab),3),rep(mean(centrostates$AtendimentoHab),4))
+states = cbind(states,a)
+
+#Criando mapa para váriavel AtendimentoHab utilizando a média de cada região
+ggplot() +
+  geom_sf(data=states, aes(fill=a), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos para cada 100 mil habitantes") +
+    theme_minimal()
+
+
+#Criando mapa para váriavel AtendimentoIndividual para região Norte
+ggplot() +
+  geom_sf(data=nortestates, aes(fill=AtendimentoIndividual), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos Individuais") +
+    theme_minimal()
+
+
+#Criando mapa para váriavel AtendimentoIndividual para região Nordeste
+ggplot() +
+  geom_sf(data=nordestestates, aes(fill=AtendimentoIndividual), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos Individuais") +
+    theme_minimal()
+
+#Criando mapa para váriavel AtendimentoIndividual para região Sudeste
+ggplot() +
+  geom_sf(data= sudestestates, aes(fill=AtendimentoIndividual), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos Individuais") +
+    theme_minimal()
+
+#Criando mapa para váriavel AtendimentoIndividual para região Sul
+ggplot() +
+  geom_sf(data=sulstates, aes(fill=AtendimentoIndividual), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos Individuais") +
+    theme_minimal()
+
+#Criando mapa para váriavel AtendimentoIndividual para região Centro Oeste
+ggplot() +
+  geom_sf(data=centrostates, aes(fill=AtendimentoIndividual), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos Individuais") +
+    theme_minimal()
+
+
+#Pegando os estados mais produtivos
+statesprod = states[c(20,17,23,21,19,22),]
+
+#Analisando os 6 estados mais produtivos, com relação a variável AtendimentosIndividuais
+ggplot() +
+  geom_sf(data=statesprod, aes(fill=AtendimentoIndividual), color= NA, size=.15) +
+      scale_fill_gradient(low = "#9c422d", high = "#f6c00d",name="Atendimentos Individuais") +
+    theme_minimal()
+
+
