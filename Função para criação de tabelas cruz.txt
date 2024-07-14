@@ -1,0 +1,203 @@
+Função para criação de tabelas cruzadas no R
+#CRIANDO FUNCÃOES DE TABELAS 
+
+
+a_table=function(x,digitos=2,ordem="n"){
+  
+  n=length(levels(as.factor(x)))
+  
+
+  temp=data.frame(matrix(data = NA,nrow = n,ncol = 3))
+  
+  
+  for(i in 1:n){
+    
+    temp[i,1]=levels(as.factor(x))[i]
+    temp[i,2]=sum(x==levels(as.factor(x))[i],na.rm = T)
+    temp[i,3]=round((sum(x==levels(as.factor(x))[i],na.rm = T)/length(x))*100,digits=digitos)
+    
+  }
+  
+  if(ordem=="n"){temp=temp[order(temp[,1]),]}else{temp=temp[order(temp[,2],decreasing = T),]}
+  
+  names(temp)=c("","N","%")
+  
+  temp[nrow(temp)+1,]=c("Total",sum(temp[,2],na.rm = T),sum(temp[,3],na.rm = T))
+  
+  return(temp)
+  
+}
+
+###ctable
+
+
+a_ctable=function(x,y,total=0){
+  
+  n1=length(levels(as.factor(x)))
+  
+  n2=length(levels(as.factor(y)))
+  
+  tab=matrix(NA,n1,n2)
+  
+  tab=data.frame(tab)
+  
+  row.names(tab)=levels(as.factor(x))
+  names(tab)=levels(as.factor(y))
+  
+  
+  for(i in 1:nrow(tab)){
+    
+    for(j in 1:ncol(tab)){
+      
+      tab[i,j]=sum(x==levels(as.factor(x))[i] & y==levels(as.factor(y))[j])
+      
+    }
+    
+  }
+  
+  tab2=matrix(NA,n1,2*n2)
+  
+  tab2=data.frame(tab2)
+  
+  names(tab2)=sort(c(levels(as.factor(y)),paste0(levels(as.factor(y)),sep = "%")))
+  
+  row.names(tab2)=levels(as.factor(x))
+  
+  
+  for(j1 in 1:n2){
+    for(j2 in 1:(2*n2)){
+      
+      if(names(tab2)[j2]==names(tab)[j1]){tab2[,j2]=tab[,j1]}
+      
+      
+    }
+    
+  }
+  
+  pares=c(1:(n2*2))
+  pares=pares[pares%%2==0]
+  
+  for(i in 1:n1){
+    
+    for(j in pares){
+      
+      tab2[i,j]=round((tab2[i,j-1]/sum(tab2[1:n1,j-1]))*100,1)
+      
+    }
+    
+  }
+  
+  if(total==1){
+  a=tab2
+  n1=nrow(a)
+  j1=ncol(a)
+  
+  impares=c(1:j1)
+  impares=impares[impares%%2!=0]
+  
+  for(i in 1:n1){
+    a[i,j1+1]=sum(a[i,impares])
+  }
+  
+  for(i in 1:n1){
+    a[i,j1+2]=round((a[i,j1+1]/sum(a[,j1+1]))*100,1)
+  }
+  
+  names(a)[c(j1+1,j1+2)]=c("Total","Total_%")
+  
+  return(a)
+  } else{return(tab2)}
+  
+}
+
+
+#poe total no ctable
+
+
+formata_fran=function(a){
+  library(stringr)
+  
+  for(i in 1:nrow(a)){
+    
+    for(j in 1:ncol(a)){
+      
+      if(is.na(a[i,j])){a[i,j]=0}
+      
+      if(as.numeric(a[i,j])>=999){a[i,j]=paste0(str_sub(a[i,j],-4,-4),".",str_sub(a[i,j],-3,-1))}
+      
+    }
+  }
+  
+  n1=nrow(a)
+  j1=ncol(a)
+  
+  impares=c(1:j1)
+  impares=impares[impares%%2!=0]
+  
+  pares=c(1:j1)
+  pares=pares[pares%%2==0]
+  
+  for(i in 1:nrow(a)){
+    
+    for(j in pares){
+      
+      if(grepl("[.]",a[i,j])==F){a[i,j]=paste0(a[i,j],".0")}
+      if(a[i,j]=="0.0"){a[i,j]="---"}
+      
+    }
+  }
+  return(a)
+}
+
+
+
+
+
+
+rm_accent <- function(str,pattern="all") {
+  # Rotinas e funÃ§Ãµes Ãºteis V 1.0
+  # rm.accent - REMOVE ACENTOS DE PALAVRAS
+  # FunÃ§Ã£o que tira todos os acentos e pontuaÃ§Ãµes de um vetor de strings.
+  # ParÃ¢metros:
+  # str - vetor de strings que terÃ£o seus acentos retirados.
+  # patterns - vetor de strings com um ou mais elementos indicando quais acentos deverÃ£o ser retirados.
+  #            Para indicar quais acentos deverÃ£o ser retirados, um vetor com os sÃ­mbolos deverÃ£o ser passados.
+  #            Exemplo: pattern = c("Â´", "^") retirarÃ¡ os acentos agudos e circunflexos apenas.
+  #            Outras palavras aceitas: "all" (retira todos os acentos, que sÃ£o "Â´", "`", "^", "~", "Â¨", "Ã§")
+  if(!is.character(str))
+    str <- as.character(str)
+  
+  pattern <- unique(pattern)
+  
+  if(any(pattern=="Ã"))
+    pattern[pattern=="Ã"] <- "Ã§"
+  
+  symbols <- c(
+    acute = "Ã¡Ã©Ã­Ã³ÃºÃÃÃÃÃÃ½Ã",
+    grave = "Ã Ã¨Ã¬Ã²Ã¹ÃÃÃÃÃ",
+    circunflex = "Ã¢ÃªÃ®Ã´Ã»ÃÃÃÃÃ",
+    tilde = "Ã£ÃµÃÃÃ±Ã",
+    umlaut = "Ã¤Ã«Ã¯Ã¶Ã¼ÃÃÃÃÃÃ¿",
+    cedil = "Ã§Ã"
+  )
+  
+  nudeSymbols <- c(
+    acute = "aeiouAEIOUyY",
+    grave = "aeiouAEIOU",
+    circunflex = "aeiouAEIOU",
+    tilde = "aoAOnN",
+    umlaut = "aeiouAEIOUy",
+    cedil = "cC"
+  )
+  
+  accentTypes <- c("Â´","`","^","~","Â¨","Ã§")
+  
+  if(any(c("all","al","a","todos","t","to","tod","todo")%in%pattern)) # opcao retirar todos
+    return(chartr(paste(symbols, collapse=""), paste(nudeSymbols, collapse=""), str))
+  
+  for(i in which(accentTypes%in%pattern))
+    str <- chartr(symbols[i],nudeSymbols[i], str)
+  
+  return(str)
+}
+
